@@ -59,6 +59,7 @@ All Contoso employees who use the ContosoDashboard application will have access 
 **Implementation Notes for Local File Storage**
 
 **Offline Storage Pattern:**
+
 - Store files in a dedicated directory outside `wwwroot` for security (e.g., `AppData/uploads`)
 - Generate unique file paths BEFORE database insertion to prevent duplicate key violations
 - Recommended pattern: `{userId}/{projectId or "personal"}/{uniqueId}.{extension}` where uniqueId is a GUID
@@ -67,6 +68,7 @@ All Contoso employees who use the ContosoDashboard application will have access 
 - **This prevents duplicate key errors from empty or non-unique file paths**
 
 **Security Considerations:**
+
 - Files stored outside `wwwroot` require controller endpoints to serve them (enables authorization checks)
 - Validate file extensions against whitelist before saving
 - Use GUID-based filenames to prevent path traversal attacks
@@ -74,6 +76,7 @@ All Contoso employees who use the ContosoDashboard application will have access 
 - Implement authorization checks in download endpoint to prevent unauthorized access
 
 **Azure Migration Design:**
+
 - Create `IFileStorageService` interface with methods: `UploadAsync()`, `DeleteAsync()`, `DownloadAsync()`, `GetUrlAsync()`
 - Local implementation (`LocalFileStorageService`) uses `System.IO.File` operations
 - Future `AzureBlobStorageService` implementation will use Azure.Storage.Blobs SDK
@@ -193,6 +196,7 @@ The feature will be considered successful if, within 3 months of launch:
 The document management feature is built using a **layered architecture** that separates concerns and enables future cloud migration:
 
 **Data Layer:**
+
 - Document entity stores metadata (title, category, filename, file path, upload date, uploader)
 - DocumentId uses integer keys (consistent with existing User and Project tables)
 - Category stores text values ("Project Documents", "Personal Files", etc.) for simplicity
@@ -201,6 +205,7 @@ The document management feature is built using a **layered architecture** that s
 - DocumentShare entity tracks sharing relationships between users
 
 **Storage Layer:**
+
 - Files stored outside web-accessible directories (security requirement)
 - IFileStorageService interface abstracts storage implementation
 - LocalFileStorageService for training (uses local filesystem)
@@ -208,6 +213,7 @@ The document management feature is built using a **layered architecture** that s
 - File organization: `{userId}/{projectId or "personal"}/{guid}.{extension}`
 
 **Business Logic Layer:**
+
 - DocumentService orchestrates upload workflow:
   1. Validate file (size limit, extension whitelist)
   2. Authorize user (project membership if uploading to project)
@@ -219,6 +225,7 @@ The document management feature is built using a **layered architecture** that s
 - Service layer enforces all security rules before data access
 
 **Presentation Layer:**
+
 - Blazor Server page for document upload and viewing
 - File upload uses MemoryStream pattern (prevents disposal issues in Blazor)
 - Responsive table displays user's documents with metadata
@@ -231,6 +238,7 @@ This architecture ensures security, maintainability, and cloud-readiness while k
 While this feature must work offline for training, it should be designed for easy migration to Azure services:
 
 **Offline Implementation Requirements:**
+
 - Store files in local directory structure (e.g., `AppData/uploads/{userId}/{projectId}/{guid}.ext`)
 - Implement `LocalFileStorageService : IFileStorageService` using `System.IO` operations
 - File paths stored in database should be relative and portable
@@ -254,6 +262,7 @@ public interface IFileStorageService
 ```
 
 **Migration Benefits:**
+
 - Swap service implementation without changing controllers, pages, or business logic
 - Database schema remains unchanged (FilePath column works for both local paths and blob names)
 - Configuration-driven deployment (dev = local, production = Azure)
@@ -268,18 +277,19 @@ public interface IFileStorageService
 - Copy `IBrowserFile` stream to `MemoryStream` immediately to prevent disposal issues
 - Clear `IBrowserFile` reference (set to null) after copying stream to prevent reuse errors
 - Example pattern:
+
   ```csharp
   var fileName = SelectedFile.Name;
   var fileSize = SelectedFile.Size;
   var contentType = SelectedFile.ContentType;
-  
+
   using var memoryStream = new MemoryStream();
   using (var fileStream = SelectedFile.OpenReadStream(maxFileSize))
   {
       await fileStream.CopyToAsync(memoryStream);
   }
   memoryStream.Position = 0;
-  
+
   SelectedFile = null; // Clear reference to prevent reuse
   StateHasChanged();
   ```
@@ -296,13 +306,12 @@ public interface IFileStorageService
 
 - Before testing document upload for the first time, ensure clean database state
 - If previous upload attempts failed, drop and recreate database to remove orphaned records:
-  ```powershell
-  sqllocaldb stop mssqllocaldb
-  sqllocaldb delete mssqllocaldb
+  ```bash
+  rm -f contosodashboard.db
   # Database will be recreated automatically on next run
   ```
 - Orphaned records with empty FilePath values will cause duplicate key violations
-- For LocalDB: `dotnet ef database drop --force` also works if EF tools are installed
+- `dotnet ef database drop --force` also works if EF tools are installed
 
 ## Assumptions
 

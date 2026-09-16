@@ -36,12 +36,12 @@ This application includes a **mock authentication system** designed for training
 
 **Available Users** (no password required - select from dropdown):
 
-| Display Name | Email | Role | Department |
-|-------------|-------|------|------------|
-| System Administrator | `admin@contoso.com` | Administrator | IT |
-| Camille Nicole | `camille.nicole@contoso.com` | Project Manager | Engineering |
-| Floris Kregel | `floris.kregel@contoso.com` | Team Lead | Engineering |
-| Ni Kang | `ni.kang@contoso.com` | Employee | Engineering |
+| Display Name         | Email                        | Role            | Department  |
+| -------------------- | ---------------------------- | --------------- | ----------- |
+| System Administrator | `admin@contoso.com`          | Administrator   | IT          |
+| Camille Nicole       | `camille.nicole@contoso.com` | Project Manager | Engineering |
+| Floris Kregel        | `floris.kregel@contoso.com`  | Team Lead       | Engineering |
+| Ni Kang              | `ni.kang@contoso.com`        | Employee        | Engineering |
 
 **Login Process:**
 
@@ -83,7 +83,7 @@ ContosoDashboard is built using ASP.NET Core 8.0 with Blazor Server and provides
 
 - **Framework**: ASP.NET Core 8.0
 - **UI**: Blazor Server
-- **Database**: SQL Server LocalDB with Entity Framework Core
+- **Database**: SQLite with Entity Framework Core
 - **Authentication**: Cookie-based mock authentication for training (Azure AD/Microsoft Entra ID ready)
 - **Authorization**: Claims-based identity with role-based access control
 - **Styling**: Bootstrap 5.3 with Bootstrap Icons
@@ -97,12 +97,14 @@ ContosoDashboard is built using ASP.NET Core 8.0 with Blazor Server and provides
 This training application follows an **offline-first architecture** with abstraction layers that enable seamless migration to Azure services:
 
 **Current Implementation (Training/Offline):**
-- **Database**: SQL Server LocalDB (offline development database)
+
+- **Database**: SQLite (offline development database)
 - **File Storage**: Local filesystem for any file-based features
 - **Authentication**: Cookie-based mock authentication
 
 **Production Migration Path:**
-- **Database**: Azure SQL Database (replace connection string, no code changes)
+
+- **Database**: Azure SQL Database (replace the provider and connection string)
 - **File Storage**: Azure Blob Storage (swap `IFileStorageService` implementation)
 - **Authentication**: Microsoft Entra ID (replace authentication middleware)
 
@@ -125,6 +127,7 @@ public interface IFileStorageService
 ```
 
 **Benefits of This Approach:**
+
 - Students learn proper abstraction patterns and dependency injection
 - Training works offline without Azure subscriptions or cloud costs
 - Migration to production requires only configuration and implementation swaps
@@ -138,14 +141,14 @@ public interface IFileStorageService
 ### Prerequisites
 
 - .NET 8.0 SDK or later
-- SQL Server LocalDB
+- SQLite (included through the EF Core provider; no separate database server is required)
 - Visual Studio 2022 or Visual Studio Code
 
 ### Quick Start
 
 1. **Navigate to the project directory**:
 
-   ```powershell
+   ```bash
    cd ContosoDashboard
    ```
 
@@ -159,7 +162,7 @@ public interface IFileStorageService
 
 4. **Login** - Select any user from the dropdown (no password required)
 
-The application automatically creates and seeds the database on first run with sample users, projects, tasks, and announcements.
+The application automatically creates and seeds the `contosodashboard.db` SQLite database on first run with sample users, projects, tasks, and announcements.
 
 ### Testing Security Features
 
@@ -236,15 +239,15 @@ ContosoDashboard/
 
 ### Database Connection
 
-The default connection string in `appsettings.json` uses SQL Server LocalDB:
+The default connection string in `appsettings.json` uses a local SQLite database file:
 
 ```json
 "ConnectionStrings": {
-  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=ContosoDashboard;Trusted_Connection=True;MultipleActiveResultSets=true"
+   "DefaultConnection": "Data Source=contosodashboard.db"
 }
 ```
 
-Update this if using a different SQL Server instance.
+Update this if using a different SQLite database file.
 
 ### Production Authentication Guidance
 
@@ -287,17 +290,17 @@ The application includes pre-seeded data for testing:
 
 ## Application Pages
 
-| Page | Route | Description | Auth Required |
-|------|-------|-------------|---------------|
-| Login | `/login` | User selection for mock auth | No |
-| Dashboard | `/` | Summary, announcements, quick actions | Yes |
-| Tasks | `/tasks` | View and manage your tasks | Yes |
-| Projects | `/projects` | View your projects | Yes |
-| Project Details | `/projects/{id}` | Detailed project view | Yes (member only) |
-| Team | `/team` | View team members | Yes |
-| Notifications | `/notifications` | Manage notifications | Yes |
-| Profile | `/profile` | Edit your profile | Yes |
-| Logout | `/logout` | End session and clear cookies | Yes |
+| Page            | Route            | Description                           | Auth Required     |
+| --------------- | ---------------- | ------------------------------------- | ----------------- |
+| Login           | `/login`         | User selection for mock auth          | No                |
+| Dashboard       | `/`              | Summary, announcements, quick actions | Yes               |
+| Tasks           | `/tasks`         | View and manage your tasks            | Yes               |
+| Projects        | `/projects`      | View your projects                    | Yes               |
+| Project Details | `/projects/{id}` | Detailed project view                 | Yes (member only) |
+| Team            | `/team`          | View team members                     | Yes               |
+| Notifications   | `/notifications` | Manage notifications                  | Yes               |
+| Profile         | `/profile`       | Edit your profile                     | Yes               |
+| Logout          | `/logout`        | End session and clear cookies         | Yes               |
 
 ## Key Functionalities
 
@@ -351,11 +354,10 @@ The application includes pre-seeded data for testing:
 
 ### Database Issues
 
-**Option 1: Recreate via LocalDB**
+**Option 1: Recreate the SQLite database**
 
-```powershell
-sqllocaldb stop mssqllocaldb
-sqllocaldb delete mssqllocaldb
+```bash
+rm -f contosodashboard.db
 # Then run the application - database will be recreated automatically
 ```
 
