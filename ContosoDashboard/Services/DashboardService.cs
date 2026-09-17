@@ -29,8 +29,8 @@ public class DashboardService : IDashboardService
                 .CountAsync(t => t.AssignedUserId == userId && t.Status != Models.TaskStatus.Completed),
 
             TasksDueToday = await _context.Tasks
-                .CountAsync(t => t.AssignedUserId == userId 
-                    && t.DueDate.HasValue 
+                .CountAsync(t => t.AssignedUserId == userId
+                    && t.DueDate.HasValue
                     && t.DueDate.Value.Date == now.Date
                     && t.Status != Models.TaskStatus.Completed),
 
@@ -40,7 +40,10 @@ public class DashboardService : IDashboardService
                 .CountAsync(),
 
             UnreadNotifications = await _context.Notifications
-                .CountAsync(n => n.UserId == userId && !n.IsRead)
+                .CountAsync(n => n.UserId == userId && !n.IsRead),
+
+            DocumentCount = await _context.Documents
+                .CountAsync(d => d.UploadedByUserId == userId && !d.IsDeleted)
         };
 
         return summary;
@@ -52,8 +55,8 @@ public class DashboardService : IDashboardService
 
         return await _context.Announcements
             .Include(a => a.CreatedByUser)
-            .Where(a => a.IsActive 
-                && a.PublishDate <= now 
+            .Where(a => a.IsActive
+                && a.PublishDate <= now
                 && (!a.ExpiryDate.HasValue || a.ExpiryDate.Value > now))
             .OrderByDescending(a => a.PublishDate)
             .Take(5)
@@ -67,4 +70,5 @@ public class DashboardSummary
     public int TasksDueToday { get; set; }
     public int ActiveProjects { get; set; }
     public int UnreadNotifications { get; set; }
+    public int DocumentCount { get; set; }
 }

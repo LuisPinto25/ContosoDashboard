@@ -10,6 +10,7 @@ public interface INotificationService
     Task<Notification> CreateNotificationAsync(Notification notification);
     Task<bool> MarkAsReadAsync(int notificationId, int requestingUserId);
     Task<int> GetUnreadCountAsync(int userId);
+    Task NotifyDocumentSharedAsync(int recipientUserId, string documentTitle);
 }
 
 public class NotificationService : INotificationService
@@ -68,5 +69,17 @@ public class NotificationService : INotificationService
     {
         return await _context.Notifications
             .CountAsync(n => n.UserId == userId && !n.IsRead);
+    }
+
+    public Task NotifyDocumentSharedAsync(int recipientUserId, string documentTitle)
+    {
+        return CreateNotificationAsync(new Notification
+        {
+            UserId = recipientUserId,
+            Title = "A document was shared with you",
+            Message = $"{documentTitle} is now available in your shared documents.",
+            Type = NotificationType.DocumentShared,
+            Priority = NotificationPriority.Informational
+        });
     }
 }

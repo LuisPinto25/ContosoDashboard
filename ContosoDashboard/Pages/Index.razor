@@ -5,6 +5,7 @@
 @attribute [Authorize]
 @inject IDashboardService DashboardService
 @inject INotificationService NotificationService
+@inject IDocumentService DocumentService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Dashboard - ContosoDashboard</PageTitle>
@@ -25,6 +26,14 @@
                     <div class="card-body">
                         <h5 class="card-title">Active Tasks</h5>
                         <p class="card-text display-4">@summary.TotalActiveTasks</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h5 class="card-title">My Documents</h5>
+                        <p class="card-text display-4 text-success">@summary.DocumentCount</p>
                     </div>
                 </div>
             </div>
@@ -118,12 +127,42 @@
             }
         </div>
     </div>
+
+    @if (recentDocuments != null && recentDocuments.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3>Recent Documents</h3>
+                <div class="list-group">
+                    @foreach (var document in recentDocuments)
+                    {
+                        <a class="list-group-item list-group-item-action" href="/documents/file/@Uri.EscapeDataString(document.StoredFileName)" target="_blank">
+                            <strong>@document.Title</strong>
+                            <span class="text-muted d-block">@document.Category · @document.UploadedAt.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (auditSummary != null)
+    {
+        <div class="row mt-4">
+            <div class="col">
+                <h3>Document Activity</h3>
+                <div class="card"><div class="card-body"><div class="row text-center"><div class="col-md-3"><strong>@auditSummary.Uploads</strong><div class="text-muted">Uploads</div></div><div class="col-md-3"><strong>@auditSummary.Downloads</strong><div class="text-muted">Downloads</div></div><div class="col-md-3"><strong>@auditSummary.Shares</strong><div class="text-muted">Shares</div></div><div class="col-md-3"><strong>@auditSummary.Deletes</strong><div class="text-muted">Deletes</div></div></div><hr /><div class="row"><div class="col-md-6"><h6>Popular file types</h6>@foreach (var item in auditSummary.TopTypes) { <div class="d-flex justify-content-between"><span>@item.Type</span><span>@item.Count</span></div> }</div><div class="col-md-6"><h6>Top uploaders</h6>@foreach (var item in auditSummary.TopUploaders) { <div class="d-flex justify-content-between"><span>@item.UserName</span><span>@item.Count</span></div> }</div></div></div></div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
     private DashboardSummary? summary;
     private List<Announcement>? announcements;
     private List<Notification>? recentNotifications;
+    private List<Document>? recentDocuments;
+    private DocumentAuditSummary? auditSummary;
     private string userName = "User";
     private int currentUserId = 0;
 
@@ -146,6 +185,8 @@
             summary = await DashboardService.GetDashboardSummaryAsync(currentUserId);
             announcements = await DashboardService.GetActiveAnnouncementsAsync();
             recentNotifications = await NotificationService.GetUserNotificationsAsync(currentUserId);
+            recentDocuments = await DocumentService.GetRecentDocumentsAsync(currentUserId);
+            auditSummary = await DocumentService.GetAuditSummaryAsync(currentUserId);
         }
     }
 

@@ -15,8 +15,8 @@
 
 **Purpose**: Prepare the feature structure and the document-storage foundation needed by all stories.
 
-- [ ] T001 Create the document feature directory and storage layout for local uploads in `ContosoDashboard/AppData/` and `specs/001-document-upload-management/`
-- [ ] T002 [P] Define document storage configuration and service registration in `ContosoDashboard/Program.cs` and `ContosoDashboard/Services/`
+- [x] T001 Create the document feature directory and storage layout for local uploads in `ContosoDashboard/AppData/` and `specs/001-document-upload-management/`
+- [x] T002 [P] Define document storage configuration and service registration in `ContosoDashboard/Program.cs` and `ContosoDashboard/Services/`
 
 ---
 
@@ -26,13 +26,13 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Create the document storage contract in `ContosoDashboard/Services/IFileStorageService.cs`
-- [ ] T004 Create the local filesystem implementation in `ContosoDashboard/Services/LocalFileStorageService.cs`
-- [ ] T005 [P] Extend `ContosoDashboard/Data/ApplicationDbContext.cs` with `DbSet<Document>` and `DbSet<DocumentShare>` and add relational indexes
-- [ ] T006 [P] Add the `Document` and `DocumentShare` models in `ContosoDashboard/Models/Document.cs` and `ContosoDashboard/Models/DocumentShare.cs`
-- [ ] T007 Implement permission-aware document logic in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T008 Add document-specific authorization checks and validation rules in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T009 [P] Register the document services and storage implementation in `ContosoDashboard/Program.cs`
+- [x] T003 Create the document storage contract in `ContosoDashboard/Services/IFileStorageService.cs`
+- [x] T004 Create the local filesystem implementation in `ContosoDashboard/Services/LocalFileStorageService.cs`
+- [x] T005 [P] Extend `ContosoDashboard/Data/ApplicationDbContext.cs` with `DbSet<Document>` and `DbSet<DocumentShare>` and add relational indexes
+- [x] T006 [P] Add the `Document` and `DocumentShare` models in `ContosoDashboard/Models/Document.cs` and `ContosoDashboard/Models/DocumentShare.cs`
+- [x] T007 Implement permission-aware document logic in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T008 Add document-specific authorization checks and validation rules in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T009 [P] Register the document services and storage implementation in `ContosoDashboard/Program.cs`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel.
 
@@ -46,11 +46,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] Create the upload form and document management page shell in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T011 [US1] Implement upload validation, file-type checks, size enforcement, and unique generated file names in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T012 [US1] Save file metadata and storage path through the local storage service in `ContosoDashboard/Services/LocalFileStorageService.cs` and `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T013 [US1] Add success/error feedback and upload progress handling in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T014 [US1] Add project association and category selection handling to the upload flow in `ContosoDashboard/Pages/Documents.razor`
+- [x] T010 [P] [US1] Create the upload form and document management page shell in `ContosoDashboard/Pages/Documents.razor`
+- [x] T011 [US1] Implement upload validation, file-type checks, size enforcement, and unique generated file names in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T012 [US1] Save file metadata and storage path through the local storage service in `ContosoDashboard/Services/LocalFileStorageService.cs` and `ContosoDashboard/Services/DocumentService.cs`
+- [x] T013 [US1] Add success/error feedback and upload progress handling in `ContosoDashboard/Pages/Documents.razor`
+- [x] T014 [US1] Add project association and category selection handling to the upload flow in `ContosoDashboard/Pages/Documents.razor`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
 
@@ -64,11 +64,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] Add the document list, sorting, and grid view in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T016 [US2] Implement document query filtering by category, project, and date in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T017 [US2] Add search by title, description, tags, uploader, and project in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T018 [US2] Enforce user authorization in document list and search results in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T019 [US2] Add the project document section and recent document summary in `ContosoDashboard/Pages/Projects.razor` and `ContosoDashboard/Pages/Index.razor`
+- [x] T015 [P] [US2] Add the document list, sorting, and grid view in `ContosoDashboard/Pages/Documents.razor`
+- [x] T016 [US2] Implement document query filtering by category, project, and date in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T017 [US2] Add search by title, description, tags, uploader, and project in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T018 [US2] Enforce user authorization in document list and search results in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T019 [US2] Add the project document section and recent document summary in `ContosoDashboard/Pages/Projects.razor` and `ContosoDashboard/Pages/Index.razor`
 
 **Checkpoint**: At this point, User Stories 1 and 2 should both work independently.
 
@@ -82,10 +82,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T020 [P] [US3] Add share controls and recipient selection to `ContosoDashboard/Pages/Documents.razor`
-- [ ] T021 [US3] Implement share creation and permission logic in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T022 [US3] Add recipient notification generation in `ContosoDashboard/Services/NotificationService.cs`
-- [ ] T023 [US3] Add a shared-documents view and access checks in `ContosoDashboard/Pages/Documents.razor`
+- [x] T020 [P] [US3] Add share controls and recipient selection to `ContosoDashboard/Pages/Documents.razor`
+- [x] T021 [US3] Implement share creation and permission logic in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T022 [US3] Add recipient notification generation in `ContosoDashboard/Services/NotificationService.cs`
+- [x] T023 [US3] Add a shared-documents view and access checks in `ContosoDashboard/Pages/Documents.razor`
 
 **Checkpoint**: At this point, the sharing flow should be independently usable and protected by authorization rules.
 
@@ -99,11 +99,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T024 [P] [US4] Add metadata edit and file replacement workflow in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T025 [US4] Implement edit, replace, and delete logic in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T026 [US4] Add deletion confirmation flow and active-view cleanup in `ContosoDashboard/Pages/Documents.razor`
-- [ ] T027 [US4] Implement document activity logging for upload, download, share, and delete actions in `ContosoDashboard/Services/DocumentService.cs`
-- [ ] T028 [US4] Expose audit and admin-friendly reporting hooks in `ContosoDashboard/Pages/Index.razor` and `ContosoDashboard/Services/DocumentService.cs`
+- [x] T024 [P] [US4] Add metadata edit and file replacement workflow in `ContosoDashboard/Pages/Documents.razor`
+- [x] T025 [US4] Implement edit, replace, and delete logic in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T026 [US4] Add deletion confirmation flow and active-view cleanup in `ContosoDashboard/Pages/Documents.razor`
+- [x] T027 [US4] Implement document activity logging for upload, download, share, and delete actions in `ContosoDashboard/Services/DocumentService.cs`
+- [x] T028 [US4] Expose audit and admin-friendly reporting hooks in `ContosoDashboard/Pages/Index.razor` and `ContosoDashboard/Services/DocumentService.cs`
 
 **Checkpoint**: At this point, all document lifecycle operations should be independently functional.
 
@@ -113,11 +113,11 @@
 
 **Purpose**: Final validation, hardening, and integration cleanup across all stories.
 
-- [ ] T029 [P] Review the document feature for security, authorization, and IDOR protection across `ContosoDashboard/Services/*` and `ContosoDashboard/Pages/*`
-- [ ] T030 Review file path safety, extension validation, and storage cleanup logic in `ContosoDashboard/Services/LocalFileStorageService.cs`
-- [ ] T031 [P] Validate the feature against the scenarios in `specs/001-document-upload-management/quickstart.md`
-- [ ] T032 Update the app documentation for the new document management flow in `README.md` and `StakeholderDocs/document-upload-and-management-feature.md`
-- [ ] T033 [P] Run a final smoke test of upload, search, share, and deletion flows in the running Blazor app
+- [x] T029 [P] Review the document feature for security, authorization, and IDOR protection across `ContosoDashboard/Services/*` and `ContosoDashboard/Pages/*`
+- [x] T030 Review file path safety, extension validation, and storage cleanup logic in `ContosoDashboard/Services/LocalFileStorageService.cs`
+- [x] T031 [P] Validate the feature against the scenarios in `specs/001-document-upload-management/quickstart.md`
+- [x] T032 Update the app documentation for the new document management flow in `README.md` and `StakeholderDocs/document-upload-and-management-feature.md`
+- [x] T033 [P] Run a final smoke test of upload, search, share, and deletion flows in the running Blazor app
 
 ---
 

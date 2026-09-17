@@ -5,6 +5,7 @@
 @using System.Security.Claims
 @attribute [Authorize]
 @inject IProjectService ProjectService
+@inject IDocumentService DocumentService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -151,6 +152,31 @@
                         }
                     </div>
                 </div>
+
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5 class="mb-0">Project Documents</h5>
+                        <a href="/documents?projectId=@ProjectId" class="btn btn-sm btn-outline-primary">Manage</a>
+                    </div>
+                    <div class="card-body">
+                        @if (projectDocuments == null || !projectDocuments.Any())
+                        {
+                            <p class="text-muted mb-0">No documents are available for this project.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var document in projectDocuments.Take(5))
+                                {
+                                    <a class="list-group-item list-group-item-action px-0" href="/documents/file/@Uri.EscapeDataString(document.StoredFileName)" target="_blank">
+                                        <strong>@document.Title</strong>
+                                        <span class="text-muted d-block">@document.Category · @document.UploadedByUser.DisplayName</span>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
             </div>
 
             <div class="col-md-4">
@@ -237,6 +263,7 @@
     public int ProjectId { get; set; }
 
     private Project? project;
+    private List<Document>? projectDocuments;
     private int currentUserId = 0;
 
     protected override async Task OnInitializedAsync()
@@ -253,6 +280,10 @@
         if (currentUserId > 0)
         {
             project = await ProjectService.GetProjectByIdAsync(ProjectId, currentUserId);
+            if (project != null)
+            {
+                projectDocuments = await DocumentService.GetProjectDocumentsAsync(ProjectId, currentUserId);
+            }
         }
         
         if (project == null)

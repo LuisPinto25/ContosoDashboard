@@ -70,6 +70,7 @@
                         <th>Status</th>
                         <th>Due Date</th>
                         <th>Project</th>
+                        <th>Documents</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -84,6 +85,9 @@
                                     <br />
                                     <small class="text-muted">@task.Description</small>
                                 }
+                            </td>
+                            <td>
+                                <a href="/documents?projectId=@task.ProjectId" class="text-decoration-none">@task.Documents.Count</a>
                             </td>
                             <td>
                                 <span class="badge bg-@GetPriorityColor(task.Priority)">

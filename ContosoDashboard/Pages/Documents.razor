@@ -1,0 +1,209 @@
+@page "/documents"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@attribute [Authorize]
+@inject IDocumentService DocumentService
+@inject IProjectService ProjectService
+@inject IUserService UserService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Documents - ContosoDashboard</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Documents</h1>
+            <p class="text-muted">Upload, find, and manage work documents securely.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(feedbackMessage))
+    {
+        <div class="alert @(operationSucceeded ? "alert-success" : "alert-danger")" role="alert">@feedbackMessage</div>
+    }
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-5">
+            <div class="card h-100">
+                <div class="card-header"><h2 class="h5 mb-0">Upload a document</h2></div>
+                <div class="card-body">
+                    <EditForm Model="uploadModel" OnValidSubmit="UploadDocumentAsync">
+                        <div class="mb-3">
+                            <label for="document-file" class="form-label">File</label>
+                            <InputFile id="document-file" OnChange="HandleFileSelected" class="form-control" />
+                            <div class="form-text">PDF, images, Office documents, CSV, or text. Maximum 25 MB.</div>
+                            @if (selectedFile != null) { <div class="small text-muted mt-1">@selectedFile.Name (@FormatFileSize(selectedFile.Size))</div> }
+                        </div>
+                        <div class="mb-3"><label class="form-label">Title</label><InputText @bind-Value="uploadModel.Title" class="form-control" maxlength="255" /></div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3"><label class="form-label">Category</label><InputSelect @bind-Value="uploadModel.Category" class="form-select"><option value="">Select a category</option>@foreach (var category in DocumentService.Categories) { <option value="@category">@category</option> }</InputSelect></div>
+                            <div class="col-md-6 mb-3"><label class="form-label">Project</label><InputSelect @bind-Value="uploadModel.ProjectId" class="form-select"><option value="">Personal document</option>@foreach (var project in projects) { <option value="@project.ProjectId">@project.Name</option> }</InputSelect></div>
+                        </div>
+                        <div class="mb-3"><label class="form-label">Tags</label><InputText @bind-Value="uploadModel.Tags" class="form-control" maxlength="1000" placeholder="e.g. planning, budget" /></div>
+                        <div class="mb-3"><label class="form-label">Description</label><InputTextArea @bind-Value="uploadModel.Description" class="form-control" rows="3" maxlength="2000" /></div>
+                        <button type="submit" class="btn btn-primary" disabled="@isBusy">@(isBusy ? "Working..." : "Upload document")</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-7">
+            <div class="card h-100">
+                <div class="card-header"><h2 class="h5 mb-0">Find documents</h2></div>
+                <div class="card-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6"><label class="form-label">Search</label><InputText @bind-Value="searchTerm" class="form-control" placeholder="Title, description, tag, uploader, project" /></div>
+                        <div class="col-md-3"><label class="form-label">Category</label><InputSelect @bind-Value="filterCategory" class="form-select"><option value="">All categories</option>@foreach (var category in DocumentService.Categories) { <option value="@category">@category</option> }</InputSelect></div>
+                        <div class="col-md-3"><label class="form-label">Project</label><InputSelect @bind-Value="filterProjectId" class="form-select"><option value="">All projects</option>@foreach (var project in projects) { <option value="@project.ProjectId">@project.Name</option> }</InputSelect></div>
+                    </div>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4"><label class="form-label">Sort by</label><InputSelect @bind-Value="sortBy" class="form-select"><option value="UploadedAt">Upload date</option><option value="Title">Title</option><option value="Category">Category</option><option value="Size">File size</option></InputSelect></div>
+                        <div class="col-md-3"><label class="form-label">Order</label><InputSelect @bind-Value="sortDescending" class="form-select"><option value="true">Descending</option><option value="false">Ascending</option></InputSelect></div>
+                        <div class="col-md-5 d-flex gap-2"><button type="button" class="btn btn-primary" @onclick="LoadDocumentsAsync">Search</button><button type="button" class="btn btn-outline-secondary" @onclick="ClearFiltersAsync">Clear</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (deleteCandidate != null)
+    {
+        <div class="alert alert-warning d-flex justify-content-between align-items-center"><span>Delete <strong>@deleteCandidate.Title</strong>? This removes it from active views and deletes its stored file.</span><span><button class="btn btn-danger btn-sm me-2" @onclick="ConfirmDeleteAsync">Confirm delete</button><button class="btn btn-outline-secondary btn-sm" @onclick="CancelDelete">Cancel</button></span></div>
+    }
+
+    @if (editingDocument != null)
+    {
+        <div class="card mb-4"><div class="card-header"><h2 class="h5 mb-0">Edit document metadata</h2></div><div class="card-body"><div class="row g-2"><div class="col-md-3"><label class="form-label">Title</label><InputText @bind-Value="editModel.Title" class="form-control" /></div><div class="col-md-3"><label class="form-label">Category</label><InputSelect @bind-Value="editModel.Category" class="form-select">@foreach (var category in DocumentService.Categories) { <option value="@category">@category</option> }</InputSelect></div><div class="col-md-3"><label class="form-label">Tags</label><InputText @bind-Value="editModel.Tags" class="form-control" /></div><div class="col-md-3"><label class="form-label">Description</label><InputText @bind-Value="editModel.Description" class="form-control" /></div></div><div class="mt-3"><button class="btn btn-primary me-2" @onclick="SaveMetadataAsync">Save changes</button><button class="btn btn-outline-secondary me-2" @onclick="CloseEditor">Cancel</button><label class="btn btn-outline-primary mb-0">Choose replacement<InputFile OnChange="HandleReplacementSelected" class="d-none" /></label>@if (replacementFile != null) { <button class="btn btn-outline-warning ms-2" @onclick="ReplaceFileAsync">Replace file</button> }</div></div></div>
+    }
+
+    @if (sharingDocument != null)
+    {
+        <div class="card mb-4"><div class="card-header"><h2 class="h5 mb-0">Share @sharingDocument.Title</h2></div><div class="card-body"><div class="row align-items-end"><div class="col-md-6"><label class="form-label">Recipient</label><InputSelect @bind-Value="shareRecipientId" class="form-select"><option value="0">Select a user</option>@foreach (var user in shareableUsers) { <option value="@user.UserId">@user.DisplayName (@user.Email)</option> }</InputSelect></div><div class="col-md-6"><button class="btn btn-primary me-2" @onclick="ShareDocumentAsync">Share and notify</button><button class="btn btn-outline-secondary" @onclick="CloseShare">Cancel</button></div></div></div></div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between"><h2 class="h5 mb-0">Accessible documents</h2><span class="text-muted">@documents.Count document(s)</span></div>
+        <div class="card-body p-0">
+            @if (documents.Count == 0) { <p class="p-3 mb-0 text-muted">No documents match the current filters.</p> }
+            else { <div class="table-responsive"><table class="table table-hover mb-0 align-middle"><thead><tr><th>Title</th><th>Category</th><th>Project</th><th>Uploader</th><th>Uploaded</th><th>Actions</th></tr></thead><tbody>@foreach (var document in documents) { <tr><td><strong>@document.Title</strong><div class="small text-muted">@document.FileName · @FormatFileSize(document.FileSizeBytes) @if (!string.IsNullOrWhiteSpace(document.Tags)) { <span>· @document.Tags</span> }</div></td><td>@document.Category</td><td>@(document.Project?.Name ?? "Personal")</td><td>@document.UploadedByUser.DisplayName</td><td>@document.UploadedAt.ToLocalTime().ToString("MMM dd, yyyy")</td><td class="text-nowrap"><a class="btn btn-sm btn-outline-primary me-1" href="@GetFileUrl(document)" target="_blank">Open</a><button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => BeginEdit(document)">Edit</button><button class="btn btn-sm btn-outline-info me-1" @onclick="() => BeginShare(document)">Share</button><button class="btn btn-sm btn-outline-danger" @onclick="() => BeginDelete(document)">Delete</button></td></tr> }</tbody></table></div> }
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h2 class="h5 mb-0">Shared with me</h2></div>
+        <div class="card-body p-0">@if (sharedDocuments.Count == 0) { <p class="p-3 mb-0 text-muted">No documents have been shared with you.</p> } else { <div class="list-group list-group-flush">@foreach (var document in sharedDocuments) { <a class="list-group-item list-group-item-action" href="@GetFileUrl(document)" target="_blank"><strong>@document.Title</strong> <span class="text-muted">from @document.UploadedByUser.DisplayName · @document.Category</span></a> }</div> }</div>
+    </div>
+</div>
+
+@code {
+    private const long MaxFileSizeBytes = 25 * 1024 * 1024;
+    private readonly UploadFormModel uploadModel = new();
+    private readonly EditFormModel editModel = new();
+    private IBrowserFile? selectedFile;
+    private IBrowserFile? replacementFile;
+    private List<Document> documents = new();
+    private List<Document> sharedDocuments = new();
+    private List<Project> projects = new();
+    private List<User> shareableUsers = new();
+    private Document? editingDocument;
+    private Document? sharingDocument;
+    private Document? deleteCandidate;
+    private int currentUserId;
+    private int shareRecipientId;
+    private string searchTerm = string.Empty;
+    private string filterCategory = string.Empty;
+    private int? filterProjectId;
+    private string sortBy = "UploadedAt";
+    private bool sortDescending = true;
+    private bool isBusy;
+    private bool operationSucceeded;
+    private string? feedbackMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var claim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+        if (claim == null || !int.TryParse(claim.Value, out currentUserId) || currentUserId <= 0) { SetFeedback(false, "Your authenticated user could not be found."); return; }
+        projects = await ProjectService.GetUserProjectsAsync(currentUserId);
+        shareableUsers = (await UserService.GetAllUsersAsync()).Where(u => u.UserId != currentUserId).ToList();
+        await LoadDocumentsAsync();
+    }
+
+    private async Task LoadDocumentsAsync()
+    {
+        documents = await DocumentService.SearchAsync(new DocumentSearchOptions(searchTerm, filterCategory, filterProjectId, SortBy: sortBy, Descending: sortDescending), currentUserId);
+        sharedDocuments = await DocumentService.GetSharedDocumentsAsync(currentUserId);
+    }
+
+    private async Task ClearFiltersAsync() { searchTerm = string.Empty; filterCategory = string.Empty; filterProjectId = null; sortBy = "UploadedAt"; sortDescending = true; await LoadDocumentsAsync(); }
+    private void HandleFileSelected(InputFileChangeEventArgs args) => selectedFile = args.File;
+    private void HandleReplacementSelected(InputFileChangeEventArgs args) => replacementFile = args.File;
+
+    private async Task UploadDocumentAsync()
+    {
+        if (selectedFile == null) { SetFeedback(false, "Choose a file before submitting the upload."); return; }
+        isBusy = true;
+        try
+        {
+            await using var stream = selectedFile.OpenReadStream(MaxFileSizeBytes);
+            var result = await DocumentService.UploadAsync(new DocumentUploadRequest(stream, selectedFile.Name, selectedFile.ContentType, selectedFile.Size, uploadModel.Title, uploadModel.Description, uploadModel.Category, uploadModel.ProjectId, uploadModel.Tags), currentUserId);
+            SetFeedback(result.Succeeded, result.Succeeded ? "Document uploaded successfully." : result.ErrorMessage!);
+            if (result.Succeeded) { uploadModel.Reset(); selectedFile = null; await LoadDocumentsAsync(); }
+        }
+        catch (IOException) { SetFeedback(false, "The selected file could not be read. Check that it is no larger than 25 MB."); }
+        finally { isBusy = false; }
+    }
+
+    private void BeginEdit(Document document) { editingDocument = document; editModel.Load(document); }
+    private void CloseEditor() => editingDocument = null;
+    private async Task SaveMetadataAsync()
+    {
+        if (editingDocument == null) return;
+        var result = await DocumentService.UpdateMetadataAsync(editingDocument.DocumentId, new DocumentMetadataUpdate(editModel.Title, editModel.Description, editModel.Category, editModel.Tags), currentUserId);
+        SetFeedback(result.Succeeded, result.Succeeded ? "Document metadata updated." : result.ErrorMessage!);
+        if (result.Succeeded) { editingDocument = null; await LoadDocumentsAsync(); }
+    }
+
+    private async Task ReplaceFileAsync()
+    {
+        if (editingDocument == null || replacementFile == null) return;
+        isBusy = true;
+        try
+        {
+            await using var stream = replacementFile.OpenReadStream(MaxFileSizeBytes);
+            var result = await DocumentService.ReplaceFileAsync(editingDocument.DocumentId, new DocumentUploadRequest(stream, replacementFile.Name, replacementFile.ContentType, replacementFile.Size, editingDocument.Title, editingDocument.Description, editingDocument.Category, editingDocument.ProjectId, editingDocument.Tags), currentUserId);
+            SetFeedback(result.Succeeded, result.Succeeded ? "Document file replaced." : result.ErrorMessage!);
+            if (result.Succeeded) { replacementFile = null; editingDocument = null; await LoadDocumentsAsync(); }
+        }
+        catch (IOException) { SetFeedback(false, "The replacement file could not be read. Check that it is no larger than 25 MB."); }
+        finally { isBusy = false; }
+    }
+
+    private void BeginShare(Document document) { sharingDocument = document; shareRecipientId = 0; }
+    private void CloseShare() => sharingDocument = null;
+    private async Task ShareDocumentAsync()
+    {
+        if (sharingDocument == null || shareRecipientId == 0) { SetFeedback(false, "Select a recipient first."); return; }
+        var result = await DocumentService.ShareAsync(sharingDocument.DocumentId, shareRecipientId, currentUserId);
+        SetFeedback(result.Succeeded, result.Succeeded ? "Document shared and recipient notified." : result.ErrorMessage!);
+        if (result.Succeeded) sharingDocument = null;
+    }
+
+    private void BeginDelete(Document document) => deleteCandidate = document;
+    private void CancelDelete() => deleteCandidate = null;
+    private async Task ConfirmDeleteAsync()
+    {
+        if (deleteCandidate == null) return;
+        var result = await DocumentService.DeleteAsync(deleteCandidate.DocumentId, currentUserId);
+        SetFeedback(result.Succeeded, result.Succeeded ? "Document deleted." : result.ErrorMessage!);
+        deleteCandidate = null;
+        if (result.Succeeded) await LoadDocumentsAsync();
+    }
+
+    private string GetFileUrl(Document document) => $"/documents/file/{Uri.EscapeDataString(document.StoredFileName)}";
+    private void SetFeedback(bool succeeded, string message) { operationSucceeded = succeeded; feedbackMessage = message; }
+    private static string FormatFileSize(long bytes) => bytes switch { >= 1024 * 1024 => $"{bytes / 1024d / 1024d:0.##} MB", >= 1024 => $"{bytes / 1024d:0.##} KB", _ => $"{bytes} bytes" };
+
+    private sealed class UploadFormModel { public string Title { get; set; } = string.Empty; public string? Description { get; set; } public string Category { get; set; } = string.Empty; public int? ProjectId { get; set; } public string? Tags { get; set; } public void Reset() { Title = string.Empty; Description = null; Category = string.Empty; ProjectId = null; Tags = null; } }
+    private sealed class EditFormModel { public string Title { get; set; } = string.Empty; public string? Description { get; set; } public string Category { get; set; } = string.Empty; public string? Tags { get; set; } public void Load(Document document) { Title = document.Title; Description = document.Description; Category = document.Category; Tags = document.Tags; } }
+}

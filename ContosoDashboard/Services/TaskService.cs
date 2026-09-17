@@ -32,6 +32,7 @@ public class TaskService : ITaskService
             .Include(t => t.AssignedUser)
             .Include(t => t.CreatedByUser)
             .Include(t => t.Project)
+            .Include(t => t.Documents)
             .Where(t => t.AssignedUserId == userId)
             .OrderByDescending(t => t.Priority)
             .ThenBy(t => t.DueDate)
@@ -44,6 +45,7 @@ public class TaskService : ITaskService
             .Include(t => t.AssignedUser)
             .Include(t => t.CreatedByUser)
             .Include(t => t.Project)
+            .Include(t => t.Documents)
             .Where(t => t.AssignedUserId == userId);
 
         if (status.HasValue)
@@ -68,6 +70,7 @@ public class TaskService : ITaskService
             .Include(t => t.CreatedByUser)
             .Include(t => t.Project)
             .ThenInclude(p => p.ProjectMembers)
+            .Include(t => t.Documents)
             .Include(t => t.Comments)
             .ThenInclude(c => c.User)
             .FirstOrDefaultAsync(t => t.TaskId == taskId);
@@ -115,7 +118,7 @@ public class TaskService : ITaskService
             .Include(t => t.Project)
             .ThenInclude(p => p.ProjectMembers)
             .FirstOrDefaultAsync(t => t.TaskId == taskId);
-            
+
         if (task == null) return false;
 
         // Authorization: Only assigned user, creator, project manager, or project members can update status

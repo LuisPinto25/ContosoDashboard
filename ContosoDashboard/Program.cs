@@ -43,6 +43,8 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 
 // Add HttpContextAccessor for accessing user claims
 builder.Services.AddHttpContextAccessor();
@@ -57,12 +59,66 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         context.Database.EnsureCreated(); // For development - use migrations in production
+        EnsureDocumentSchema(context);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred creating the database.");
     }
+}
+
+static void EnsureDocumentSchema(ApplicationDbContext context)
+{
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS Documents (
+            DocumentId INTEGER NOT NULL CONSTRAINT PK_Documents PRIMARY KEY AUTOINCREMENT,
+            Title TEXT NOT NULL,
+            Description TEXT NULL,
+            Category TEXT NOT NULL,
+            Tags TEXT NULL,
+            FileName TEXT NOT NULL,
+            StoredFileName TEXT NOT NULL,
+            FilePath TEXT NOT NULL,
+            FileSizeBytes INTEGER NOT NULL,
+            MimeType TEXT NOT NULL,
+            UploadedByUserId INTEGER NOT NULL,
+            ProjectId INTEGER NULL,
+            TaskId INTEGER NULL,
+            UploadedAt TEXT NOT NULL,
+            UpdatedAt TEXT NOT NULL,
+            IsDeleted INTEGER NOT NULL,
+            CONSTRAINT FK_Documents_Users_UploadedByUserId FOREIGN KEY (UploadedByUserId) REFERENCES Users (UserId) ON DELETE RESTRICT,
+            CONSTRAINT FK_Documents_Projects_ProjectId FOREIGN KEY (ProjectId) REFERENCES Projects (ProjectId) ON DELETE SET NULL,
+            CONSTRAINT FK_Documents_Tasks_TaskId FOREIGN KEY (TaskId) REFERENCES Tasks (TaskId) ON DELETE SET NULL
+        );
+        CREATE TABLE IF NOT EXISTS DocumentShares (
+            DocumentShareId INTEGER NOT NULL CONSTRAINT PK_DocumentShares PRIMARY KEY AUTOINCREMENT,
+            DocumentId INTEGER NOT NULL,
+            UserId INTEGER NOT NULL,
+            SharedByUserId INTEGER NOT NULL,
+            SharedAt TEXT NOT NULL,
+            IsActive INTEGER NOT NULL,
+            CONSTRAINT FK_DocumentShares_Documents_DocumentId FOREIGN KEY (DocumentId) REFERENCES Documents (DocumentId) ON DELETE CASCADE,
+            CONSTRAINT FK_DocumentShares_Users_UserId FOREIGN KEY (UserId) REFERENCES Users (UserId) ON DELETE RESTRICT,
+            CONSTRAINT FK_DocumentShares_Users_SharedByUserId FOREIGN KEY (SharedByUserId) REFERENCES Users (UserId) ON DELETE RESTRICT
+        );
+        CREATE TABLE IF NOT EXISTS DocumentActivities (
+            DocumentActivityId INTEGER NOT NULL CONSTRAINT PK_DocumentActivities PRIMARY KEY AUTOINCREMENT,
+            DocumentId INTEGER NOT NULL,
+            ActorUserId INTEGER NOT NULL,
+            Action TEXT NOT NULL,
+            Details TEXT NULL,
+            CreatedAt TEXT NOT NULL,
+            CONSTRAINT FK_DocumentActivities_Documents_DocumentId FOREIGN KEY (DocumentId) REFERENCES Documents (DocumentId) ON DELETE CASCADE,
+            CONSTRAINT FK_DocumentActivities_Users_ActorUserId FOREIGN KEY (ActorUserId) REFERENCES Users (UserId) ON DELETE RESTRICT
+        );
+        CREATE INDEX IF NOT EXISTS IX_Documents_UploadedByUserId_IsDeleted ON Documents (UploadedByUserId, IsDeleted);
+        CREATE INDEX IF NOT EXISTS IX_Documents_ProjectId_IsDeleted ON Documents (ProjectId, IsDeleted);
+        CREATE INDEX IF NOT EXISTS IX_Documents_Category ON Documents (Category);
+        CREATE UNIQUE INDEX IF NOT EXISTS IX_DocumentShares_DocumentId_UserId_IsActive ON DocumentShares (DocumentId, UserId, IsActive);
+        CREATE INDEX IF NOT EXISTS IX_DocumentActivities_DocumentId_CreatedAt ON DocumentActivities (DocumentId, CreatedAt);
+        """);
 }
 
 // Configure the HTTP request pipeline.
@@ -106,6 +162,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapBlazorHub();
+app.MapGet("/documents/file/{storedFileName}", async (string storedFileName, HttpContext httpContext, IDocumentService documentService, CancellationToken cancellationToken) =>
+{
+    var claim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+    if (claim == null || !int.TryParse(claim.Value, out var userId))
+    {
+        return Results.Unauthorized();
+    }
+
+    var file = await documentService.OpenAuthorizedFileAsync(storedFileName, userId, cancellationToken);
+    return file == null
+        ? Results.NotFound()
+        : Results.File(file.Content, file.ContentType, file.DownloadName, enableRangeProcessing: true);
+}).RequireAuthorization();
 app.MapFallbackToPage("/_Host");
 
 app.Run();

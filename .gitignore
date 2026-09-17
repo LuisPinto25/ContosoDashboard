@@ -183,6 +183,9 @@ publish/
 # in these scripts will be unencrypted
 PublishScripts/
 
+# Protected local document storage
+ContosoDashboard/AppData/uploads/
+
 # NuGet Packages
 *.nupkg
 # NuGet Symbol Packages

@@ -403,3 +403,7 @@ The application demonstrates good coding practices:
 - Entity Framework Core with eager loading (`.Include()`) to prevent N+1 query problems
 - Clean separation of concerns (Models, Services, Data, Pages)
 - Dependency injection for loose coupling and testability
+
+## Document Management
+
+The document repository is available at `/documents`. It supports upload, category and project association, tags, search, filtering, sorting, authorized preview/download, sharing notifications, metadata editing, file replacement, and confirmed deletion. Uploaded files are stored outside `wwwroot` under `ContosoDashboard/AppData/uploads` with server-generated names. SQLite stores metadata, shares, and activity records. Administrators can view aggregate document activity on the dashboard.
